@@ -19,21 +19,31 @@ def main():
     st.title("CAGR Calculator for Multiple Columns")
     
     st.write("""
-    This app calculates the Compound Annual Growth Rate (CAGR) for all columns in a provided CSV file.
+    This app calculates the Compound Annual Growth Rate (CAGR) for all columns in a provided file (CSV, XLS, or XLSX).
     """)
     
-    uploaded_file = st.file_uploader("Choose a CSV file", type=("xls", "xlsx", "csv"))
+    uploaded_file = st.file_uploader("Choose a file", type=["csv", "xls", "xlsx"])
     
     if uploaded_file is not None:
-        data = pd.read_csv(uploaded_file)
-        st.write("Uploaded Data:")
-        st.write(data)
-        
-        if st.button("Calculate CAGR"):
-            cagr_results = compute_cagr(data)
-            cagr_df = pd.DataFrame(list(cagr_results.items()), columns=['Variable', 'CAGR (%)'])
-            st.write("CAGR Results:")
-            st.write(cagr_df)
+        try:
+            if uploaded_file.name.endswith('.csv'):
+                data = pd.read_csv(uploaded_file)
+            elif uploaded_file.name.endswith(('.xls', '.xlsx')):
+                data = pd.read_excel(uploaded_file)
+            else:
+                st.error("Unsupported file format!")
+                return
+            
+            st.write("Uploaded Data:")
+            st.write(data)
+            
+            if st.button("Calculate CAGR"):
+                cagr_results = compute_cagr(data)
+                cagr_df = pd.DataFrame(list(cagr_results.items()), columns=['Variable', 'CAGR (%)'])
+                st.write("CAGR Results:")
+                st.write(cagr_df)
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     main()
