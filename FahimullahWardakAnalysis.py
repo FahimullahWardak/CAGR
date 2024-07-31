@@ -42,7 +42,7 @@ def compute_cdvi(cv, adj_r_squared):
     return cdvi
 
 # Streamlit app
-st.title('Trend Analyser by [SumanEcon]')
+st.title('Trend Analyser')
 
 # File upload
 uploaded_file = st.file_uploader("Upload a CSV, XLSX, or XLS file", type=["csv", "xlsx", "xls"])
