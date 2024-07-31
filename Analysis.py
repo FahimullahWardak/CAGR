@@ -1,27 +1,39 @@
 import streamlit as st
+import pandas as pd
 
-def compute_cagr(initial_value, final_value, years):
-    cagr = (final_value / initial_value) ** (1 / years) - 1
-    return cagr
+def compute_cagr(data):
+    cagr_results = {}
+    years = len(data) - 1
+    for column in data.columns:
+        initial_value = data[column].iloc[0]
+        final_value = data[column].iloc[-1]
+        if initial_value > 0 and final_value > 0:
+            cagr = (final_value / initial_value) ** (1 / years) - 1
+            cagr_results[column] = cagr * 100  # converting to percentage
+        else:
+            cagr_results[column] = None
+    return cagr_results
 
 # Streamlit app
 def main():
-    st.title("CAGR Calculator")
+    st.title("CAGR Calculator for Multiple Columns")
     
     st.write("""
-    This app calculates the Compound Annual Growth Rate (CAGR) given the initial value, final value, and the number of years.
+    This app calculates the Compound Annual Growth Rate (CAGR) for all columns in a provided CSV file.
     """)
     
-    initial_value = st.number_input("Initial Value", min_value=0.0, format="%.2f")
-    final_value = st.number_input("Final Value", min_value=0.0, format="%.2f")
-    years = st.number_input("Number of Years", min_value=0, format="%d")
+    uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
     
-    if st.button("Calculate CAGR"):
-        if initial_value <= 0 or final_value <= 0 or years <= 0:
-            st.error("Please enter positive values for all inputs.")
-        else:
-            cagr = compute_cagr(initial_value, final_value, years)
-            st.success(f"The Compound Annual Growth Rate (CAGR) is: {cagr * 100:.2f}%")
+    if uploaded_file is not None:
+        data = pd.read_csv(uploaded_file)
+        st.write("Uploaded Data:")
+        st.write(data)
+        
+        if st.button("Calculate CAGR"):
+            cagr_results = compute_cagr(data)
+            cagr_df = pd.DataFrame(list(cagr_results.items()), columns=['Variable', 'CAGR (%)'])
+            st.write("CAGR Results:")
+            st.write(cagr_df)
 
 if __name__ == "__main__":
     main()
