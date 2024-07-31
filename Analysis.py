@@ -4,7 +4,6 @@ import numpy as np
 from math import sqrt
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
-import base64
 
 # Function to compute CAGR and p-value
 def compute_cagr(data, column):
@@ -22,7 +21,7 @@ def compute_cagr(data, column):
     model = ols('LogColumn ~ Time', data=data).fit()
     
     # Compute CAGR
-    cagr = np.exp(model.params['Time']) - 1
+    cagr = (np.exp(model.params['Time']) - 1) * 100  # Convert to percentage
     
     # Extract p-value and adjusted R-squared
     p_value = model.pvalues['Time']
@@ -34,39 +33,16 @@ def compute_cagr(data, column):
 def compute_statistics(data, column):
     mean_val = data[column].mean()
     std_val = data[column].std()
-    cv_val = (std_val / mean_val)*100
+    cv_val = (std_val / mean_val) * 100
     return mean_val, std_val, cv_val
 
 # Function to compute CDVI
 def compute_cdvi(cv, adj_r_squared):
     cdvi = cv * sqrt(1 - adj_r_squared)
     return cdvi
-def render_svg(svg_file):
-    """Renders the given SVG file as a base64 encoded image."""
-    with open(svg_file, "r") as f:
-        svg = f.read()
-        
-        b64 = base64.b64encode(svg.encode("utf-8")).decode("utf-8")
-        html = f'<img src="data:image/svg+xml;base64,{b64}"/>'
-        return html
+
 # Streamlit app
-st.set_page_config(layout="wide")
-st.markdown(
-    "<h1 style='text-align: center;'>Trend Analyser by <a href='https://github.com/patilmanojkumar'>Manojkumar Patil</a></h1>",
-    unsafe_allow_html=True
-)
-#st.title('Trend Analyser by [Manojkumar Patil](https://github.com/patilmanojkumar)')
-# Displaying the dynamic SVG banner
-st.markdown(
-    """
-    <p align="center">
-      <a href="https://github.com/DenverCoder1/readme-typing-svg">
-        <img src="https://readme-typing-svg.herokuapp.com?font=Time+New+Roman&color=yellow&size=30&center=true&vCenter=true&width=600&height=100&lines=Trend+Analysis+Made+Simple!;trend_analyser-1.0;" alt="Typing SVG">
-      </a>
-    </p>
-    """,
-    unsafe_allow_html=True
-)
+st.title('Trend Analyser by [SumanEcon]')
 
 # File upload
 uploaded_file = st.file_uploader("Upload a CSV, XLSX, or XLS file", type=["csv", "xlsx", "xls"])
@@ -80,17 +56,25 @@ if uploaded_file:
     st.write("Data Preview:")
     st.write(data.head())
     
-    column = st.selectbox("Select the target column", data.columns)
-    
-    if st.button('Compute CAGR and Statistics'):
-        cagr, p_value, adj_r_squared = compute_cagr(data, column)
-        mean_val, std_val, cv_val = compute_statistics(data, column)
-        cdvi = compute_cdvi(cv_val, adj_r_squared)
+    if st.button('Compute CAGR and Statistics for All Columns'):
+        results = []
+
+        for column in data.columns:
+            if pd.api.types.is_numeric_dtype(data[column]):
+                cagr, p_value, adj_r_squared = compute_cagr(data, column)
+                mean_val, std_val, cv_val = compute_statistics(data, column)
+                cdvi = compute_cdvi(cv_val, adj_r_squared)
+                
+                results.append({
+                    'Column': column,
+                    'CAGR (%)': f"{cagr:.2f}",
+                    'P-Value': f"{p_value:.6f}",
+                    'Mean': f"{mean_val:.2f}",
+                    'Standard Deviation': f"{std_val:.2f}",
+                    'Coefficient of Variation (CV) (%)': f"{cv_val:.2f}",
+                    'Adjusted R Squared': f"{adj_r_squared:.2f}",
+                    'Cuddy Della Valle Index (CDVI)': f"{cdvi:.2f}"
+                })
         
-        st.write(f"CAGR: {cagr:.2%}")
-        st.write(f"P-Value: {p_value:.10f}")
-        st.write(f"Mean: {mean_val:.2f}")
-        st.write(f"Standard Deviation: {std_val:.2f}")
-        st.write(f"Coefficient of Variation (CV): {cv_val:.2f}")
-        st.write(f"Adjusted R Square: {adj_r_squared:.2f}")
-        st.write(f"Cuddy Della Valle Index (CDVI): {cdvi:.2f}")
+        results_df = pd.DataFrame(results)
+        st.write(results_df)
